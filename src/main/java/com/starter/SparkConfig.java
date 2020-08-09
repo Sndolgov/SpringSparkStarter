@@ -4,19 +4,15 @@ import com.starter.properties.SparkProperties;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Duration;
-import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.StreamingContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-
 
 import static com.starter.properties.Profiles.DEV;
 import static com.starter.properties.Profiles.PROD;
@@ -63,11 +59,6 @@ public class SparkConfig
         return new JavaSparkContext(sc);
     }
 
-    @Bean
-    public SparkContext sc(SparkConf conf)
-    {
-        return SparkContext.getOrCreate(conf);
-    }
 
     @Profile(PROD)
     @Bean
@@ -84,9 +75,15 @@ public class SparkConfig
     }
 
     @Bean
-    public StreamingContext streamingContext(SparkConf conf)
+    public SparkContext sc(SparkConf conf)
     {
-        return new StreamingContext(conf, Duration.apply(sparkProperties.getBatchDuration()*1000));
+        return SparkContext.getOrCreate(conf);
+    }
+
+    @Bean
+    public StreamingContext streamingContext(SparkContext context)
+    {
+        return StreamingContext.getActiveOrCreate(()->new StreamingContext(context, Duration.apply(sparkProperties.getBatchDuration()*1000)));
     }
 
 
